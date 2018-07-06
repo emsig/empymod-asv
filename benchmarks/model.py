@@ -19,7 +19,7 @@ class Dipole:
         res = np.r_[2e14, 0.3, np.linspace(.1, 10, nl-2)]
         rec = [np.linspace(500, min(20000, noff*500+500), noff),
                np.zeros(noff), 1000]
-        freq = np.logspace(0.01, 10, nfreq)
+        freq = np.logspace(-2, 2, nfreq)
 
         self.model = {'src': [0, 0, 990], 'rec': rec, 'depth': depth, 'res':
                       res, 'freqtime': freq, 'ab': 11, 'htarg': 'key_201_2009',
