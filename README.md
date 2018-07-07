@@ -1,5 +1,13 @@
 # Benchmarks for empymod using airspeed velocity
 
-[![asv](http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat)](http://empymod.github.io/asv/)
+[![asv](http://img.shields.io/badge/benchmarked%20by-asv-brightgreen.svg?style=flat)](http://empymod.github.io/asv/)
 
-In development. More to come...
+Currently there are benchmarks for:
+
+   - `kernel`: `wavenumber`, 'greenfct`, 'reflections`, 'fields`;
+   - `transform`: `fht`, `hqwe`, `hquad`, `ffht`, `fqwe`, `fftlog`, `fft`,
+                  `dlf`;
+   - `model`: `bipole`, `dipole`, `analytical`.
+
+The benchmarks are not very extensive, but sufficiently enough to catch any
+serious regression.
