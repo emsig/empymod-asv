@@ -4,7 +4,7 @@
 
 Currently there are benchmarks for:
 
-   - `kernel`: `wavenumber`, 'greenfct`, 'reflections`, 'fields`;
+   - `kernel`: `wavenumber`, `greenfct`, `reflections`, `fields`;
    - `transform`: `fht`, `hqwe`, `hquad`, `ffht`, `fqwe`, `fftlog`, `fft`,
                   `dlf`;
    - `model`: `bipole`, `dipole`, `analytical`.
