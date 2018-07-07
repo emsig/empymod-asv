@@ -24,6 +24,7 @@ class Bipole:
                 res=[2e14, 0.3, 1, 100, 1],
                 freqtime=[0.1, 1.0, 10.],
                 srcpts=5, recpts=5, strength=1000,
+                htarg='key_201_2009',
                 xdirect=False, verb=3)
 
     def time_bipole_time(self):
@@ -33,6 +34,7 @@ class Bipole:
                 depth=[0, 1000, 2000, 2100],
                 res=[2e14, 0.3, 1, 100, 1],
                 freqtime=[0.1, 1.0, 10.],
+                htarg='key_201_2009',
                 srcpts=1, recpts=1, strength=0,
                 signal=-1, xdirect=False, verb=3)
 
@@ -57,6 +59,7 @@ class Dipole:
                 'res': [2e14, 0.3, 1, 100, 1],
                 'freqtime': np.logspace(-2, 2, 21),
                 'xdirect': False,
+                'htarg': 'key_201_2009',
                 'opt': None,
                 'loop': loop,
                 'verb': 0}
