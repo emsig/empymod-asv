@@ -2,6 +2,9 @@ import numpy as np
 from empymod import kernel, filters, utils
 
 
+VariableCatch = (LookupError, AttributeError, ValueError, TypeError, NameError)
+
+
 class Core:
     """Timing for empymod.kernel functions.
 
@@ -51,10 +54,10 @@ class Core:
         verb = 0
 
         # Checks
-        try:  # From f1cfe201 onwards
+        try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
             model = utils.check_model(depth, res, None, None, None, None, None,
                                       xdirect, verb)
-        except:  # Till f1cfe201
+        except VariableCatch:  # Till f1cfe201
             model = utils.check_model(depth, res, None, None, None, None, None,
                                       verb)
         depth, res, aniso, epermH, epermV, mpermH, mpermV, _ = model

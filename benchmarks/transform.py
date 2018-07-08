@@ -2,6 +2,9 @@ import numpy as np
 from empymod import model, transform, kernel, utils
 
 
+VariableCatch = (LookupError, AttributeError, ValueError, TypeError, NameError)
+
+
 class Hankel:
     """Timing for empymod.transform functions related to Hankel transform.
 
@@ -45,8 +48,12 @@ class Hankel:
         verb = 0
 
         # Checks
-        model = utils.check_model(depth, res, None, None, None, None, None,
-                                  xdirect, verb)
+        try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
+            model = utils.check_model(depth, res, None, None, None, None, None,
+                                      xdirect, verb)
+        except VariableCatch:  # Till f1cfe201
+            model = utils.check_model(depth, res, None, None, None, None, None,
+                                      verb)
         depth, res, aniso, epermH, epermV, mpermH, mpermV, _ = model
         frequency = utils.check_frequency(freq, res, aniso, epermH, epermV,
                                           mpermH, mpermV, verb)
@@ -174,9 +181,16 @@ class Dlf:
                                use_ne_eval)
         factAng = kernel.angle_factor(angle, ab, msrc, mrec)
 
-        self.dlf = {'signal': PJ, 'points': lambd, 'out_pts': off,
-                    'filt': fhtarg[0], 'pts_per_dec': fhtarg[1],
-                    'factAng': factAng, 'ab': ab}
+        try:  # From a15af07 onwards (20/05/2018; before v1.6.2)
+            dlf = {'signal': PJ, 'points': lambd, 'out_pts': off,
+                   'filt': fhtarg[0], 'pts_per_dec': fhtarg[1],
+                   'factAng': factAng, 'ab': ab}
+            transform.dlf(**dlf)
+        except VariableCatch:  # Till a15af07
+            dlf = {'signal': PJ, 'points': lambd, 'out_pts': off,
+                   'targ': fhtarg, 'factAng': factAng}
+
+        self.dlf = dlf
 
     def time_dlf(self, size, htype):
         transform.dlf(**self.dlf)
@@ -219,12 +233,23 @@ class Fourier:
         signal = 0
         verb = 1
 
-        cmodel = utils.check_model(depth, res, None, None, None, None, None,
-                                   False, verb)
+        try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
+            cmodel = utils.check_model(depth, res, None, None, None, None, None,
+                                       False, verb)
+        except VariableCatch:  # Till f1cfe201
+            cmodel = utils.check_model(depth, res, None, None, None, None, None,
+                                       verb)
         depth, res, aniso, epermH, epermV, mpermH, mpermV, isfullspace = cmodel
-        ht, htarg = utils.check_hankel('fht', None, verb)
-        use_ne_eval, loop_freq, loop_off = utils.check_opt(None, None, ht,
-                                                           htarg, verb)
+
+        try:  # From 9bed72b0 onwards (29/04/2018; before v1.4.1)
+            ht, htarg = utils.check_hankel('fht', {'pts_per_dec': -1}, verb)
+            optimization = utils.check_opt(None, None, ht, htarg, verb)
+            use_ne_eval, loop_freq, loop_off = optimization
+        except VariableCatch:  # Till 9bed72b0
+            ht, htarg = utils.check_hankel('fht', None, verb)
+            optimization = utils.check_opt('spline', None, ht, htarg, verb)
+            use_spline, use_ne_eval, loop_freq, loop_off = optimization
+
         ab, msrc, mrec = utils.check_ab(11, verb)
         src, nsrc = utils.check_dipole(src, 'src', verb)
         rec, nrec = utils.check_dipole(rec, 'rec', verb)
@@ -239,10 +264,18 @@ class Fourier:
                                               mpermH, mpermV, verb)
             freq, etaH, etaV, zetaH, zetaV = frequency
 
-            EM, _, _ = model.fem(ab, off, angle, zsrc, zrec, lsrc, lrec, depth,
-                                 freq, etaH, etaV, zetaH, zetaV, False,
-                                 isfullspace, ht, htarg, use_ne_eval, msrc,
-                                 mrec, loop_freq, loop_off)
+            try:  # From 9bed72b0 onwards (29/04/2018; before v1.4.1)
+                EM, _, _ = model.fem(ab, off, angle, zsrc, zrec, lsrc, lrec,
+                                     depth, freq, etaH, etaV, zetaH, zetaV,
+                                     False, isfullspace, ht, htarg,
+                                     use_ne_eval, msrc, mrec, loop_freq,
+                                     loop_off)
+            except VariableCatch:  # Till 9bed72b0
+                EM, _, _ = model.fem(ab, off, angle, zsrc, zrec, lsrc, lrec,
+                                     depth, freq, etaH, etaV, zetaH, zetaV,
+                                     False, isfullspace, ht, htarg, True,
+                                     use_ne_eval, msrc, mrec, loop_freq,
+                                     loop_off)
 
             return (np.squeeze(EM), time, freq, ftarg)
 
