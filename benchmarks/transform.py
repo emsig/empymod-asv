@@ -75,37 +75,66 @@ class Hankel:
                        zetaV, 'xdirect': xdirect, 'msrc': msrc, 'mrec': mrec,
                        'use_ne_eval': use_ne_eval}
 
+        # Check if new or old version
+        # (from 9bed72b0 onwards; 29/04/2018; before v1.4.1)
+        opt = utils.check_opt(None, None, 'fht', ['', 0], verb)
+        if np.size(opt) == 4:
+            new_version = False
+        else:
+            new_version = True
+
         # HT arguments
-        _, self.fhtarg_la = utils.check_hankel('fht', ['key_201_2009', -1], 0)
-        _, self.fhtarg_st = utils.check_hankel('fht', ['key_201_2009', 0], 0)
-        _, self.fhtarg_sp = utils.check_hankel('fht', ['key_201_2009', 10], 0)
+        _, fhtarg_st = utils.check_hankel('fht', ['key_201_2009', 0], 0)
+        self.fhtarg_st = {'fhtarg': fhtarg_st}
+        _, fhtarg_sp = utils.check_hankel('fht', ['key_201_2009', 10], 0)
+        self.fhtarg_sp = {'fhtarg': fhtarg_sp}
+        if new_version:
+            _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', -1], 0)
+            self.fhtarg_la = {'fhtarg': fhtarg_la}
+        else:
+            _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', 0], 0)
+            self.fhtarg_la = {'use_spline': True, 'fhtarg': fhtarg_la}
 
+        # QWE: We lower the requirements here, otherwise it takes too long
         args = {'pts_per_dec': 0, 'rtol': 1e-6, 'atol': 1e-10}
-        _, self.qwearg_st = utils.check_hankel('qwe', args, 0)
+        _, qwearg_st = utils.check_hankel('qwe', args, 0)
+        self.qwearg_st = {'qweargs': qwearg_st}
         args = {'pts_per_dec': 10, 'rtol': 1e-6, 'atol': 1e-10}
-        _, self.qwearg_sp = utils.check_hankel('qwe', args, 0)
+        _, qwearg_sp = utils.check_hankel('qwe', args, 0)
+        self.qwearg_sp = {'qweargs': qwearg_sp}
 
-        # We lower the requirements here, otherwise it takes too long
+        # QUAD: We lower the requirements here, otherwise it takes too long
         args = {'pts_per_dec': 10, 'rtol': 1e-6, 'atol': 1e-10, 'limit': 100}
-        _, self.quadargs = utils.check_hankel('quad', args, 0)
+        try:  # QUAD wasn't included from the beginning on
+            _, quadargs = utils.check_hankel('quad', args, 0)
+            self.quadargs = {'quadargs': quadargs}
+        except VariableCatch:
+            self.quadargs = {}
+
+        if not new_version:
+            self.fhtarg_st.update({'use_spline': False})
+            self.fhtarg_sp.update({'use_spline': True})
+            self.qwearg_st.update({'use_spline': False})
+            self.qwearg_sp.update({'use_spline': True})
+            self.quadargs.update({'use_spline': True})
 
     def time_fht_standard(self, size):
-        transform.fht(fhtarg=self.fhtarg_st, **self.hankel)
+        transform.fht(**self.fhtarg_st, **self.hankel)
 
     def time_fht_lagged(self, size):
-        transform.fht(fhtarg=self.fhtarg_la, **self.hankel)
+        transform.fht(**self.fhtarg_la, **self.hankel)
 
     def time_fht_splined(self, size):
-        transform.fht(fhtarg=self.fhtarg_sp, **self.hankel)
+        transform.fht(**self.fhtarg_sp, **self.hankel)
 
     def time_hqwe_standard(self, size):
-        transform.hqwe(qweargs=self.qwearg_st, **self.hankel)
+        transform.hqwe(**self.qwearg_st, **self.hankel)
 
     def time_hqwe_splined(self, size):
-        transform.hqwe(qweargs=self.qwearg_sp, **self.hankel)
+        transform.hqwe(**self.qwearg_sp, **self.hankel)
 
     def time_hquad(self, size):
-        transform.hquad(quadargs=self.quadargs, **self.hankel)
+        transform.hquad(**self.quadargs, **self.hankel)
 
 
 class Dlf:
@@ -234,11 +263,11 @@ class Fourier:
         verb = 1
 
         try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
-            cmodel = utils.check_model(depth, res, None, None, None, None, None,
-                                       False, verb)
+            cmodel = utils.check_model(depth, res, None, None, None, None,
+                                       None, False, verb)
         except VariableCatch:  # Till f1cfe201
-            cmodel = utils.check_model(depth, res, None, None, None, None, None,
-                                       verb)
+            cmodel = utils.check_model(depth, res, None, None, None, None,
+                                       None, verb)
         depth, res, aniso, epermH, epermV, mpermH, mpermV, isfullspace = cmodel
 
         try:  # From 9bed72b0 onwards (29/04/2018; before v1.4.1)
@@ -258,7 +287,7 @@ class Fourier:
         lrec, zrec = utils.get_layer_nr(rec, depth)
 
         def get_args(freqtime, ft, ftarg):
-            time, freq, ft, ftarg = utils.check_time(freqtime, signal, 'sin',
+            time, freq, ft, ftarg = utils.check_time(freqtime, signal, ft,
                                                      ftarg, verb)
             frequency = utils.check_frequency(freq, res, aniso, epermH, epermV,
                                               mpermH, mpermV, verb)
@@ -279,34 +308,43 @@ class Fourier:
 
             return (np.squeeze(EM), time, freq, ftarg)
 
-        self.ffht_st = get_args(freqtime, 'ffht', {'pts_per_dec': 0})
-        self.ffht_la = get_args(freqtime, 'ffht', {'pts_per_dec': -1})
-        self.ffht_sp = get_args(freqtime, 'ffht', {'pts_per_dec': 10})
+        # ffht used to be fft until the introduction of fft
+        try:
+            getattr(transform, 'ffht')
+            fft_and_ffht = True
+            name_ffht = 'ffht'
+        except VariableCatch:
+            fft_and_ffht = False
+            name_ffht = 'fft'
+        self.ffht_calc = getattr(transform, name_ffht)
 
-        self.fqwe_st = get_args(freqtime, 'fqwe', {'pts_per_dec': 0})
-        self.fqwe_sp = get_args(freqtime, 'fqwe', {'pts_per_dec': 10})
+        self.ffht_st = get_args(freqtime, name_ffht, {'pts_per_dec': 0})
+        self.ffht_la = get_args(freqtime, name_ffht, {'pts_per_dec': -1})
+        self.ffht_sp = get_args(freqtime, name_ffht, {'pts_per_dec': 10})
+
+        self.fqwe = get_args(freqtime, 'fqwe', {'pts_per_dec': 10})
 
         self.fftlog = get_args(freqtime, 'fftlog', None)
 
-        self.fft = get_args(freqtime, 'fft', None)
+        if fft_and_ffht:
+            self.fft = get_args(freqtime, 'fft', None)
+        else:
+            self.fft = ()
 
-    def time_ffht_la(self, size):
-        transform.ffht(*self.ffht_la)
+    def time_ffht_lagged(self, size):
+        self.ffht_calc(*self.ffht_la)
 
-    def time_ffht_st(self, size):
-        transform.ffht(*self.ffht_st)
+    def time_ffht_standard(self, size):
+        self.ffht_calc(*self.ffht_st)
 
-    def time_ffht_sp(self, size):
-        transform.ffht(*self.ffht_sp)
+    def time_ffht_splined(self, size):
+        self.ffht_calc(*self.ffht_sp)
 
-    def time_fqwe_sp(self, size):
-        transform.ffht(*self.fqwe_sp)
-
-    def time_fqwe_st(self, size):
-        transform.ffht(*self.fqwe_st)
+    def time_fqwe(self, size):
+        transform.fqwe(*self.fqwe)
 
     def time_fftlog(self, size):
-        transform.ffht(*self.fftlog)
+        transform.fftlog(*self.fftlog)
 
     def time_fft(self, size):
-        transform.ffht(*self.fft)
+        transform.fft(*self.fft)

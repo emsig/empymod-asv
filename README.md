@@ -11,3 +11,6 @@ Currently there are benchmarks for:
 
 The benchmarks are not very extensive, but sufficiently enough to catch any
 serious regression.
+
+Most benchmarks only work backwards until v1.2.0. Before, `numexpr` was a
+mandatory requirement.

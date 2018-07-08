@@ -102,7 +102,7 @@ class Core:
 
     # kernel.wavenumber()
     def time_wavenumber(self, size):
-        kernel.greenfct(**self.green_wave)
+        kernel.wavenumber(**self.green_wave)
 
     # kernel.greenfct()
     def time_greenfct(self, size):
