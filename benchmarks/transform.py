@@ -318,9 +318,15 @@ class Fourier:
             name_ffht = 'fft'
         self.ffht_calc = getattr(transform, name_ffht)
 
-        self.ffht_st = get_args(freqtime, name_ffht, {'pts_per_dec': 0})
-        self.ffht_la = get_args(freqtime, name_ffht, {'pts_per_dec': -1})
-        self.ffht_sp = get_args(freqtime, name_ffht, {'pts_per_dec': 10})
+        # Check default pts_per_dec to see if new or old case
+        test = utils.check_time(freqtime, signal, 'sin', ['', 'test'], 0)
+        if test[3][1] is None:
+            self.ffht_st = ()  # Standard was not possible in old case
+            self.ffht_la = get_args(freqtime, name_ffht, None)
+        else:
+            self.ffht_st = get_args(freqtime, name_ffht, ['', 0])
+            self.ffht_la = get_args(freqtime, name_ffht, ['', -1])
+        self.ffht_sp = get_args(freqtime, name_ffht, ['', 10])
 
         self.fqwe = get_args(freqtime, 'fqwe', {'pts_per_dec': 10})
 
