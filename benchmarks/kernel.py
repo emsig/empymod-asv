@@ -51,9 +51,14 @@ class Core:
         verb = 0
 
         # Checks
-        model = utils.check_model(depth, res, None, None, None, None, None,
-                                  xdirect, verb)
+        try:  # From f1cfe201 onwards
+            model = utils.check_model(depth, res, None, None, None, None, None,
+                                      xdirect, verb)
+        except:  # Till f1cfe201
+            model = utils.check_model(depth, res, None, None, None, None, None,
+                                      verb)
         depth, res, aniso, epermH, epermV, mpermH, mpermV, _ = model
+
         frequency = utils.check_frequency(freq, res, aniso, epermH, epermV,
                                           mpermH, mpermV, verb)
         freq, etaH, etaV, zetaH, zetaV = frequency
