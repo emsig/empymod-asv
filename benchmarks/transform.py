@@ -92,7 +92,7 @@ class Hankel:
             _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', -1], 0)
             self.fhtarg_la = {'fhtarg': fhtarg_la}
         else:
-            _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', 0], 0)
+            _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', None], 0)
             self.fhtarg_la = {'use_spline': True, 'fhtarg': fhtarg_la}
 
         # QWE: We lower the requirements here, otherwise it takes too long
