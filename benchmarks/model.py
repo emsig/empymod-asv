@@ -72,6 +72,66 @@ class Dipole:
         model.dipole(rec=[3000, 0, 1000], signal=0, **self.model)
 
 
+class DipoleVariousCases:
+    """Timing for empymod.model.dipole.
+
+    Check a few other cases (ab, angle, freq-range, src/rec-layer).
+
+    """
+
+    def time_dipole_marine_angle_12(self):
+        model.dipole(src=[0, 0, 990],
+                     rec=[np.arange(1, 11)*600, np.arange(1, 11)*400, 1000],
+                     depth=[0, 1000],
+                     res=[2e14, 0.3, 1],
+                     freqtime=np.logspace(-2, 2, 11),
+                     ab=12,
+                     xdirect=False,
+                     htarg='key_101_2009',
+                     verb=0)
+
+    def time_dipole_land_angle_16(self):
+        model.dipole(src=[0, 0, 1e-5],
+                     rec=[np.arange(1, 11)*600, np.arange(1, 11)*400, 1e-5],
+                     depth=0,
+                     res=[2e14, 10],
+                     freqtime=np.logspace(-2, 2, 11),
+                     ab=16,
+                     epermH=[0, 1],
+                     epermV=[0, 1],
+                     xdirect=False,
+                     htarg='key_101_2009',
+                     verb=0)
+
+    def time_dipole_difflsrclrec_42(self):
+        model.dipole(src=[0, 0, -20],
+                     rec=[np.arange(1, 11)*600, np.zeros(10), 100],
+                     depth=[0, 50],
+                     res=[2e14, 10, 1],
+                     aniso=[1, 2, 0.5],
+                     freqtime=np.logspace(-2, 2, 11),
+                     ab=42,
+                     xdirect=False,
+                     htarg='key_101_2009',
+                     verb=0)
+
+    def time_dipole_highfreq_11(self):
+        model.dipole(src=[0, 0, 2],
+                     rec=[np.arange(1, 11), np.arange(1, 11)/4, 3],
+                     depth=[0, 10],
+                     res=[2e14, 10, 100],
+                     aniso=[1, 2, 0.5],
+                     freqtime=np.logspace(6, 8, 11),
+                     ab=11,
+                     epermH=[1, 80, 5],
+                     epermV=[1, 40, 10],
+                     mpermH=[1, 1, 4],
+                     mpermV=[1, 2, 0.5],
+                     xdirect=False,
+                     htarg='key_401_2012',
+                     verb=0)
+
+
 class Analytical:
     """Timing for empymod.model.analytical."""
 
