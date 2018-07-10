@@ -1,8 +1,7 @@
 import numpy as np
-from empymod import kernel, filters, utils
-
-
-VariableCatch = (LookupError, AttributeError, ValueError, TypeError, NameError)
+from empymod import kernel, filters
+from scipy.constants import mu_0       # Magn. permeability of free space [H/m]
+from scipy.constants import epsilon_0  # Elec. permittivity of free space [F/m]
 
 
 class Core:
@@ -37,45 +36,42 @@ class Core:
         # One big, one small model
         if size == 'Small':  # Total size: 5*1*1*1 = 5
             freq = np.array([1])
-            x = np.array([500.])
+            off = np.array([500.])
             base = np.array([1])
         else:          # Total size: 5*100*100*201 = 10'050'000
             freq = np.logspace(-2, 2, 100)
-            x = np.arange(1, 101)*200.
+            off = np.arange(1, 101)*200.
             base = filters.key_201_2009().base
 
-        # Define model parameters
-        src = [0, 0, 250]
-        rec = [x, np.zeros(x.shape), 300]
+        # Define survey
+        lsrc = 1
+        zsrc = np.array([250.])
+        lrec = 1
+        zrec = np.array([300.])
+        ab = 11
+        msrc = False
+        mrec = False
+
+        # Define model
         depth = np.array([-np.infty, 0, 300, 2000, 2100])
         res = np.array([2e14, .3, 1, 50, 1])
-        ab = 11
-        xdirect = False
-        verb = 0
+        aniso = np.ones(res.shape)
+        epermH = np.ones(res.shape)
+        epermV = np.ones(res.shape)
+        mpermH = np.ones(res.shape)
+        mpermV = np.ones(res.shape)
 
-        # Checks
-        try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
-            model = utils.check_model(depth, res, None, None, None, None, None,
-                                      xdirect, verb)
-        except VariableCatch:  # Till f1cfe201
-            model = utils.check_model(depth, res, None, None, None, None, None,
-                                      verb)
-        depth, res, aniso, epermH, epermV, mpermH, mpermV, _ = model
-
-        frequency = utils.check_frequency(freq, res, aniso, epermH, epermV,
-                                          mpermH, mpermV, verb)
-        freq, etaH, etaV, zetaH, zetaV = frequency
-        ab, msrc, mrec = utils.check_ab(ab, verb)
-        src, nsrc = utils.check_dipole(src, 'src', verb)
-        rec, nrec = utils.check_dipole(rec, 'rec', verb)
-        off, angle = utils.get_off_ang(src, rec, nsrc, nrec, verb)
-        lsrc, zsrc = utils.get_layer_nr(src, depth)
-        lrec, zrec = utils.get_layer_nr(rec, depth)
-
-        # Other params
+        # Other parameters
         use_ne_eval = False
-        lambd = base/off[:, None]
+        xdirect = False
         TM = True
+
+        # Calculate eta, zeta, wavenumber, Gamma
+        etaH = 1/res + np.outer(2j*np.pi*freq, epermH*epsilon_0)
+        etaV = 1/(res*aniso*aniso) + np.outer(2j*np.pi*freq, epermV*epsilon_0)
+        zetaH = np.outer(2j*np.pi*freq, mpermH*mu_0)
+        zetaV = np.outer(2j*np.pi*freq, mpermV*mu_0)
+        lambd = base/off[:, None]
         Gam = np.sqrt((etaH/etaV)[:, None, :, None] *
                       (lambd*lambd)[None, :, None, :] +
                       (zetaH*etaH)[:, None, :, None])

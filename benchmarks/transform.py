@@ -1,6 +1,7 @@
 import numpy as np
 from empymod import model, transform, kernel, utils
-
+from scipy.constants import mu_0       # Magn. permeability of free space [H/m]
+from scipy.constants import epsilon_0  # Elec. permittivity of free space [F/m]
 
 VariableCatch = (LookupError, AttributeError, ValueError, TypeError, NameError)
 
@@ -33,40 +34,40 @@ class Hankel:
 
         # One big, one small model
         if size == 'Small':  # Total size: 5*1*1*1 = 5
-            x = np.array([500.])
+            off = np.array([500.])
         else:          # Total size: 5*100*1*201 = 100'500
-            x = np.arange(1, 101)*200.
+            off = np.arange(1, 101)*200.
 
-        # Define model parameters
+        # Define survey
         freq = np.array([1])
-        src = [0, 0, 250]
-        rec = [x, np.zeros(x.shape), 300]
+        lsrc = 1
+        zsrc = np.array([250.])
+        lrec = 1
+        zrec = np.array([300.])
+        angle = np.zeros(off.shape)
+        ab = 11
+        msrc = False
+        mrec = False
+
+        # Define model
         depth = np.array([-np.infty, 0, 300, 2000, 2100])
         res = np.array([2e14, .3, 1, 50, 1])
-        ab = 11
+        aniso = np.ones(res.shape)
+        epermH = np.ones(res.shape)
+        epermV = np.ones(res.shape)
+        mpermH = np.ones(res.shape)
+        mpermV = np.ones(res.shape)
+
+        # Other parameters
+        use_ne_eval = False
         xdirect = False
         verb = 0
 
-        # Checks
-        try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
-            model = utils.check_model(depth, res, None, None, None, None, None,
-                                      xdirect, verb)
-        except VariableCatch:  # Till f1cfe201
-            model = utils.check_model(depth, res, None, None, None, None, None,
-                                      verb)
-        depth, res, aniso, epermH, epermV, mpermH, mpermV, _ = model
-        frequency = utils.check_frequency(freq, res, aniso, epermH, epermV,
-                                          mpermH, mpermV, verb)
-        freq, etaH, etaV, zetaH, zetaV = frequency
-        ab, msrc, mrec = utils.check_ab(ab, verb)
-        src, nsrc = utils.check_dipole(src, 'src', verb)
-        rec, nrec = utils.check_dipole(rec, 'rec', verb)
-        off, angle = utils.get_off_ang(src, rec, nsrc, nrec, verb)
-        lsrc, zsrc = utils.get_layer_nr(src, depth)
-        lrec, zrec = utils.get_layer_nr(rec, depth)
-
-        # Other params
-        use_ne_eval = False
+        # Calculate eta, zeta
+        etaH = 1/res + np.outer(2j*np.pi*freq, epermH*epsilon_0)
+        etaV = 1/(res*aniso*aniso) + np.outer(2j*np.pi*freq, epermV*epsilon_0)
+        zetaH = np.outer(2j*np.pi*freq, mpermH*mu_0)
+        zetaV = np.outer(2j*np.pi*freq, mpermV*mu_0)
 
         # Collect input for kernel.greenfct()
         self.hankel = {'zsrc': zsrc, 'zrec': zrec, 'lsrc': lsrc, 'lrec': lrec,
@@ -75,47 +76,56 @@ class Hankel:
                        zetaV, 'xdirect': xdirect, 'msrc': msrc, 'mrec': mrec,
                        'use_ne_eval': use_ne_eval}
 
-        # Check if new or old version
-        # (from 9bed72b0 onwards; 29/04/2018; before v1.4.1)
-        opt = utils.check_opt(None, None, 'fht', ['', 0], verb)
-        if np.size(opt) == 4:
+        # Before c73d6647; you had to give `ab` to `check_hankel`;
+        # check_opt didn't exist then.
+        try:
+            opt = utils.check_opt(None, None, 'fht', ['', 0], verb)
+            charg = (0, )
+            if np.size(opt) == 4:
+                new_version = False
+            else:
+                new_version = True
+        except VariableCatch:
             new_version = False
+            charg = (ab, verb)
+
+        # From 9bed72b0 onwards, there is no `use_spline`; `ftarg` input
+        # changed (29/04/2018; before v1.4.1).
+        if new_version:
+            ftarg = ['key_201_2009', -1]
         else:
-            new_version = True
+            ftarg = ['key_201_2009', None]
 
         # HT arguments
-        _, fhtarg_st = utils.check_hankel('fht', ['key_201_2009', 0], 0)
+        _, fhtarg_st = utils.check_hankel('fht', ['key_201_2009', 0], *charg)
         self.fhtarg_st = {'fhtarg': fhtarg_st}
-        _, fhtarg_sp = utils.check_hankel('fht', ['key_201_2009', 10], 0)
+        _, fhtarg_sp = utils.check_hankel('fht', ['key_201_2009', 10], *charg)
         self.fhtarg_sp = {'fhtarg': fhtarg_sp}
-        if new_version:
-            _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', -1], 0)
-            self.fhtarg_la = {'fhtarg': fhtarg_la}
-        else:
-            _, fhtarg_la = utils.check_hankel('fht', ['key_201_2009', None], 0)
-            self.fhtarg_la = {'use_spline': True, 'fhtarg': fhtarg_la}
+        _, fhtarg_la = utils.check_hankel('fht', ftarg, *charg)
+        self.fhtarg_la = {'fhtarg': fhtarg_la}
 
         # QWE: We lower the requirements here, otherwise it takes too long
         args = {'pts_per_dec': 0, 'rtol': 1e-6, 'atol': 1e-10}
-        _, qwearg_st = utils.check_hankel('qwe', args, 0)
+        _, qwearg_st = utils.check_hankel('qwe', args, *charg)
         self.qwearg_st = {'qweargs': qwearg_st}
         args = {'pts_per_dec': 10, 'rtol': 1e-6, 'atol': 1e-10}
-        _, qwearg_sp = utils.check_hankel('qwe', args, 0)
+        _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
         self.qwearg_sp = {'qweargs': qwearg_sp}
 
         # QUAD: We lower the requirements here, otherwise it takes too long
         args = {'pts_per_dec': 10, 'rtol': 1e-6, 'atol': 1e-10, 'limit': 100}
         try:  # QUAD wasn't included from the beginning on
-            _, quadargs = utils.check_hankel('quad', args, 0)
+            _, quadargs = utils.check_hankel('quad', args, *charg)
             self.quadargs = {'quadargs': quadargs}
         except VariableCatch:
             self.quadargs = {}
 
         if not new_version:
-            self.fhtarg_st.update({'use_spline': False})
+            self.fhtarg_la.update({'use_spline': True})
             self.fhtarg_sp.update({'use_spline': True})
-            self.qwearg_st.update({'use_spline': False})
+            self.fhtarg_st.update({'use_spline': False})
             self.qwearg_sp.update({'use_spline': True})
+            self.qwearg_st.update({'use_spline': False})
             self.quadargs.update({'use_spline': True})
 
     def time_fht_standard(self, size):
@@ -175,8 +185,10 @@ class Dlf:
         ab = 11
         xdirect = False
         verb = 0
+        use_ne_eval = False
 
-        # Checks
+        # Checks (since DLF exists the `utils`-checks haven't changed, so we
+        # just use them here.
         model = utils.check_model(depth, res, None, None, None, None, None,
                                   xdirect, verb)
         depth, res, aniso, epermH, epermV, mpermH, mpermV, _ = model
@@ -190,9 +202,7 @@ class Dlf:
         lsrc, zsrc = utils.get_layer_nr(src, depth)
         lrec, zrec = utils.get_layer_nr(rec, depth)
 
-        # Other params
-        use_ne_eval = False
-
+        # pts_per_dec depending on htype
         if htype == 'Lagged':
             pts_per_dec = -1
         elif htype == 'Splined':
@@ -210,12 +220,13 @@ class Dlf:
                                use_ne_eval)
         factAng = kernel.angle_factor(angle, ab, msrc, mrec)
 
-        try:  # From a15af07 onwards (20/05/2018; before v1.6.2)
+        # Signature changed at commit a15af07 (20/05/2018; before v1.6.2)
+        try:
             dlf = {'signal': PJ, 'points': lambd, 'out_pts': off,
                    'filt': fhtarg[0], 'pts_per_dec': fhtarg[1],
                    'factAng': factAng, 'ab': ab}
             transform.dlf(**dlf)
-        except VariableCatch:  # Till a15af07
+        except VariableCatch:
             dlf = {'signal': PJ, 'points': lambd, 'out_pts': off,
                    'targ': fhtarg, 'factAng': factAng}
 
@@ -254,59 +265,72 @@ class Fourier:
         else:
             freqtime = np.logspace(-1, 1, 11)
 
-        src = [0, 0, 250]
-        rec = [5000, 0, 300]
+        # Define survey
+        lsrc = 1
+        zsrc = np.array([250.])
+        lrec = 1
+        zrec = np.array([300.])
+        angle = np.array([0])
+        off = np.array([5000])
+        ab = 11
+        msrc = False
+        mrec = False
+
+        # Define model
         depth = np.array([-np.infty, 0, 300, 2000, 2100])
         res = np.array([2e14, .3, 1, 50, 1])
+        aniso = np.ones(res.shape)
+        epermH = np.ones(res.shape)
+        epermV = np.ones(res.shape)
+        mpermH = np.ones(res.shape)
+        mpermV = np.ones(res.shape)
 
+        # Other parameters
+        verb = 0
+        use_ne_eval = False
+        loop_freq = True
+        loop_off = False
         signal = 0
-        verb = 1
 
-        try:  # From f1cfe201 onwards (28/04/2018; before v1.4.1)
-            cmodel = utils.check_model(depth, res, None, None, None, None,
-                                       None, False, verb)
-        except VariableCatch:  # Till f1cfe201
-            cmodel = utils.check_model(depth, res, None, None, None, None,
-                                       None, verb)
-        depth, res, aniso, epermH, epermV, mpermH, mpermV, isfullspace = cmodel
-
-        try:  # From 9bed72b0 onwards (29/04/2018; before v1.4.1)
+        # `pts_per_dec` changed at 9bed72b0 (29/04/2018; bef. v1.4.1)
+        try:
             ht, htarg = utils.check_hankel('fht', {'pts_per_dec': -1}, verb)
-            optimization = utils.check_opt(None, None, ht, htarg, verb)
-            use_ne_eval, loop_freq, loop_off = optimization
-        except VariableCatch:  # Till 9bed72b0
-            ht, htarg = utils.check_hankel('fht', None, verb)
-            optimization = utils.check_opt('spline', None, ht, htarg, verb)
-            use_spline, use_ne_eval, loop_freq, loop_off = optimization
-
-        ab, msrc, mrec = utils.check_ab(11, verb)
-        src, nsrc = utils.check_dipole(src, 'src', verb)
-        rec, nrec = utils.check_dipole(rec, 'rec', verb)
-        off, angle = utils.get_off_ang(src, rec, nsrc, nrec, verb)
-        lsrc, zsrc = utils.get_layer_nr(src, depth)
-        lrec, zrec = utils.get_layer_nr(rec, depth)
+        except VariableCatch:
+            # `check_hankel`-signature changed at c73d6647
+            try:
+                ht, htarg = utils.check_hankel('fht', None, verb)
+            except VariableCatch:
+                ht, htarg = utils.check_hankel('fht', None, ab, verb)
 
         def get_args(freqtime, ft, ftarg):
             time, freq, ft, ftarg = utils.check_time(freqtime, signal, ft,
                                                      ftarg, verb)
-            frequency = utils.check_frequency(freq, res, aniso, epermH, epermV,
-                                              mpermH, mpermV, verb)
-            freq, etaH, etaV, zetaH, zetaV = frequency
 
-            try:  # From 9bed72b0 onwards (29/04/2018; before v1.4.1)
-                EM, _, _ = model.fem(ab, off, angle, zsrc, zrec, lsrc, lrec,
-                                     depth, freq, etaH, etaV, zetaH, zetaV,
-                                     False, isfullspace, ht, htarg,
-                                     use_ne_eval, msrc, mrec, loop_freq,
-                                     loop_off)
-            except VariableCatch:  # Till 9bed72b0
-                EM, _, _ = model.fem(ab, off, angle, zsrc, zrec, lsrc, lrec,
-                                     depth, freq, etaH, etaV, zetaH, zetaV,
-                                     False, isfullspace, ht, htarg, True,
-                                     use_ne_eval, msrc, mrec, loop_freq,
-                                     loop_off)
+            # Calculate eta, zeta
+            etaH = 1/res + np.outer(2j*np.pi*freq, epermH*epsilon_0)
+            etaV = 1/(res*aniso*aniso) + np.outer(2j*np.pi*freq,
+                                                  epermV*epsilon_0)
+            zetaH = np.outer(2j*np.pi*freq, mpermH*mu_0)
+            zetaV = np.outer(2j*np.pi*freq, mpermV*mu_0)
 
-            return (np.squeeze(EM), time, freq, ftarg)
+            # `model.fem`-signature changed on 9bed72b0
+            # (29/04/2018; bef. v1.4.1)
+            inp = (ab, off, angle, zsrc, zrec, lsrc, lrec, depth, freq, etaH,
+                   etaV, zetaH, zetaV, False, False, ht, htarg, use_ne_eval,
+                   msrc, mrec, loop_freq, loop_off)
+            try:
+                out = model.fem(*inp)
+            except VariableCatch:
+                out = model.fem(*inp[:17], True, *inp[17:])
+
+            # `model.fem` returned in the beginning only fEM;
+            # then (fEM, kcount) and finally (fEM, kcount, conv).
+            if isinstance(out, tuple):
+                fEM = np.squeeze(out[0])
+            else:
+                fEM = np.squeeze(out)
+
+            return (fEM, time, freq, ftarg)
 
         # ffht used to be fft until the introduction of fft
         try:
@@ -319,14 +343,23 @@ class Fourier:
         self.ffht_calc = getattr(transform, name_ffht)
 
         # Check default pts_per_dec to see if new or old case
-        test = utils.check_time(freqtime, signal, 'sin', ['', 'test'], 0)
-        if test[3][1] is None:
+        try:
+            test = utils.check_time(freqtime, signal, 'sin',
+                                    ['key_201_CosSin_2012', 'test'], 0)
+            old_case = test[3][1] is None
+        except VariableCatch:
+            old_case = True
+
+        if old_case:
             self.ffht_st = ()  # Standard was not possible in old case
             self.ffht_la = get_args(freqtime, name_ffht, None)
         else:
-            self.ffht_st = get_args(freqtime, name_ffht, ['', 0])
-            self.ffht_la = get_args(freqtime, name_ffht, ['', -1])
-        self.ffht_sp = get_args(freqtime, name_ffht, ['', 10])
+            self.ffht_st = get_args(freqtime, name_ffht,
+                                    ['key_201_CosSin_2012', 0])
+            self.ffht_la = get_args(freqtime, name_ffht,
+                                    ['key_201_CosSin_2012', -1])
+        self.ffht_sp = get_args(freqtime, name_ffht,
+                                ['key_201_CosSin_2012', 10])
 
         self.fqwe = get_args(freqtime, 'fqwe', {'pts_per_dec': 10})
 
