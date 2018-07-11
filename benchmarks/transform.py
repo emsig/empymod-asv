@@ -105,15 +105,18 @@ class Hankel:
         self.fhtarg_la = {'fhtarg': fhtarg_la}
 
         # QWE: We lower the requirements here, otherwise it takes too long
-        args = {'pts_per_dec': 0, 'rtol': 1e-6, 'atol': 1e-10}
+        # ['rtol', 'atol', 'nquad', 'maxint', 'pts_per_dec', 'diff_quad', 'a',
+        # 'b', 'limit']
+        args = [1e-6, 1e-10, 51, 100, 0]
         _, qwearg_st = utils.check_hankel('qwe', args, *charg)
         self.qwearg_st = {'qweargs': qwearg_st}
-        args = {'pts_per_dec': 10, 'rtol': 1e-6, 'atol': 1e-10}
+        args = [1e-6, 1e-10, 51, 100, 10]
         _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
         self.qwearg_sp = {'qweargs': qwearg_sp}
 
         # QUAD: We lower the requirements here, otherwise it takes too long
-        args = {'pts_per_dec': 10, 'rtol': 1e-6, 'atol': 1e-10, 'limit': 100}
+        # ['rtol', 'atol', 'limit', 'a', 'b', 'pts_per_dec']
+        args = [1e-6, 1e-10, 100, '', '', 10]
         try:  # QUAD wasn't included from the beginning on
             _, quadargs = utils.check_hankel('quad', args, *charg)
             self.quadargs = {'quadargs': quadargs}
@@ -294,7 +297,7 @@ class Fourier:
 
         # `pts_per_dec` changed at 9bed72b0 (29/04/2018; bef. v1.4.1)
         try:
-            ht, htarg = utils.check_hankel('fht', {'pts_per_dec': -1}, verb)
+            ht, htarg = utils.check_hankel('fht', ['', -1], verb)
         except VariableCatch:
             # `check_hankel`-signature changed at c73d6647
             try:
@@ -361,7 +364,7 @@ class Fourier:
         self.ffht_sp = get_args(freqtime, name_ffht,
                                 ['key_201_CosSin_2012', 10])
 
-        self.fqwe = get_args(freqtime, 'fqwe', {'pts_per_dec': 10})
+        self.fqwe = get_args(freqtime, 'fqwe', ['', '', '', '', 10])
 
         self.fftlog = get_args(freqtime, 'fftlog', None)
 
