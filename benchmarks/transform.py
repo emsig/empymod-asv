@@ -80,7 +80,7 @@ class Hankel:
         # check_opt didn't exist then.
         try:
             opt = utils.check_opt(None, None, 'fht', ['', 0], verb)
-            charg = (0, )
+            charg = (verb, )
             if np.size(opt) == 4:
                 new_version = False
             else:
@@ -110,14 +110,20 @@ class Hankel:
         args = [1e-6, 1e-10, 51, 100, 0]
         _, qwearg_st = utils.check_hankel('qwe', args, *charg)
         self.qwearg_st = {'qweargs': qwearg_st}
-        args = [1e-6, 1e-10, 51, 100, 10]
-        _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
+
+        # Args depend if QUAD included into QWE or not
+        try:
+            args = [1e-6, 1e-10, 51, 100, 10, np.inf]
+            _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
+        except VariableCatch:
+            args = [1e-6, 1e-10, 51, 100, 10]
+            _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
         self.qwearg_sp = {'qweargs': qwearg_sp}
 
         # QUAD: We lower the requirements here, otherwise it takes too long
         # ['rtol', 'atol', 'limit', 'a', 'b', 'pts_per_dec']
-        args = [1e-6, 1e-10, 100, '', '', 10]
-        try:  # QUAD wasn't included from the beginning on
+        args = [1e-6, 1e-10, 100, 1e-6, 0.1, 10]
+        try:  # QUAD only included since 6104614e (before v1.3.0)
             _, quadargs = utils.check_hankel('quad', args, *charg)
             self.quadargs = {'quadargs': quadargs}
         except VariableCatch:

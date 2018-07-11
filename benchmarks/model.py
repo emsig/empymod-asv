@@ -28,7 +28,7 @@ class Bipole:
                 freqtime=[0.1, 1.0, 10.],
                 srcpts=5, recpts=5, strength=1000,
                 htarg='key_201_2009',
-                xdirect=False, verb=3)
+                xdirect=False, verb=0)
 
     def time_bipole_time(self):
         model.bipole(
@@ -39,7 +39,7 @@ class Bipole:
                 freqtime=[0.1, 1.0, 10.],
                 htarg='key_201_2009',
                 srcpts=1, recpts=1, strength=0,
-                signal=-1, xdirect=False, verb=3)
+                signal=-1, xdirect=False, verb=0)
 
 
 class Dipole:
