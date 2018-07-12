@@ -67,28 +67,26 @@ class Dipole:
                 'verb': 0}
 
         self.freqtime = np.logspace(-2, 2, 21)
+        self.fmodel = dc(self.model)
+        self.tmodel = dc(self.model)
 
         # Till c73d6647 (btw. v1.0.0 and v1.1.0) there were the routines
         # `frequency` and `time`, which were later merged into `dipole`.
         try:
             # Test
-            model.dipole([0, 0, 1], [10, 0, 2], [], 1, 1)
+            model.dipole([0, 0, 1], [10, 0, 2], [], 1, 1, verb=0)
             # Frequency
             self.freq = model.dipole
-            self.fmodel = dc(self.model)
             self.fmodel['freqtime'] = self.freqtime
             # Time
             self.time = model.dipole
-            self.tmodel = dc(self.model)
             self.tmodel['freqtime'] = self.freqtime
         except VariableCatch:
             # Frequency
             self.freq = model.frequency
-            self.fmodel = dc(self.model)
             self.fmodel['freq'] = self.freqtime
             # Time
             self.time = model.time
-            self.tmodel = dc(self.model)
             self.tmodel['time'] = self.freqtime
 
     def time_dipole_freq(self, loop):
@@ -111,7 +109,7 @@ class DipoleVariousCases:
         # Till c73d6647 (btw. v1.0.0 and v1.1.0) there were the routines
         # `frequency` and `time`, which were later merged into `dipole`.
         try:
-            model.dipole([0, 0, 1], [10, 0, 2], [], 1, 1)
+            model.dipole([0, 0, 1], [10, 0, 2], [], 1, 1, verb=0)
             self.func = model.dipole
         except VariableCatch:
             self.func = model.frequency
