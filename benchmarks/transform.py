@@ -107,17 +107,20 @@ class Hankel:
         # QWE: We lower the requirements here, otherwise it takes too long
         # ['rtol', 'atol', 'nquad', 'maxint', 'pts_per_dec', 'diff_quad', 'a',
         # 'b', 'limit']
-        args = [1e-6, 1e-10, 51, 100, 0]
-        _, qwearg_st = utils.check_hankel('qwe', args, *charg)
-        self.qwearg_st = {'qweargs': qwearg_st}
 
         # Args depend if QUAD included into QWE or not
         try:
-            args = [1e-6, 1e-10, 51, 100, 10, np.inf]
-            _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
+            args_sp = [1e-6, 1e-10, 51, 100, 10, np.inf]
+            args_st = [1e-6, 1e-10, 51, 100, 0, np.inf]
+            _, qwearg_sp = utils.check_hankel('qwe', args_sp, *charg)
+            _, qwearg_st = utils.check_hankel('qwe', args_st, *charg)
         except VariableCatch:
-            args = [1e-6, 1e-10, 51, 100, 10]
-            _, qwearg_sp = utils.check_hankel('qwe', args, *charg)
+            args_sp = [1e-6, 1e-10, 51, 100, 10]
+            args_st = [1e-6, 1e-10, 51, 100, 0]
+            _, qwearg_sp = utils.check_hankel('qwe', args_sp, *charg)
+            _, qwearg_st = utils.check_hankel('qwe', args_st, *charg)
+
+        self.qwearg_st = {'qweargs': qwearg_st}
         self.qwearg_sp = {'qweargs': qwearg_sp}
 
         # QUAD: We lower the requirements here, otherwise it takes too long

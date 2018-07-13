@@ -94,10 +94,11 @@ class Dipole:
                   **self.fmodel)
 
     def time_dipole_time(self, loop):
-        self.time(rec=[3000, 0, 1000], signal=0, **self.tmodel)
+        self.time(rec=[np.arange(1, 4)*1000, np.zeros(3), 1000],
+                  signal=0, **self.tmodel)
 
 
-class DipoleVariousCases:
+class Various:
     """Timing for empymod.model.dipole.
 
     Check a few other cases (ab, angle, freq-range, src/rec-layer).
