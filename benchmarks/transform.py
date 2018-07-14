@@ -34,7 +34,7 @@ class Hankel:
 
         # One big, one small model
         if size == 'Small':  # Total size: 5*1*1*1 = 5
-            off = np.array([500.])
+            off = np.array([500., 1000.])
         else:          # Total size: 5*100*1*201 = 100'500
             off = np.arange(1, 101)*200.
 
@@ -184,7 +184,7 @@ class Dlf:
 
         # One big, one small model
         if size == 'Small':  # Total size: 5*1*1*1 = 5
-            x = np.array([500.])
+            x = np.array([500., 1000.])
         else:          # Total size: 5*100*100*201 = 10'050'000
             x = np.arange(1, 101)*200.
 
