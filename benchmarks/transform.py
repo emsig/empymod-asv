@@ -148,6 +148,24 @@ class Hankel:
         except:
             self.hankel['factAng'] = kernel.angle_factor(angle, ab, msrc, mrec)
 
+        # From b6f6872 onwards fht-transforms calculates lambd/int_pts in
+        # model.fem, not in transform.fht, to avoid re-calculation in loops.
+        try:
+            transform.fht(**self.fhtarg_la, **self.hankel)
+        except:
+            lambd, int_pts = transform.get_spline_values(fhtarg_st[0], off,
+                                                         fhtarg_st[1])
+            self.fhtarg_st.update({'fhtarg': (fhtarg_st[0],
+                                              fhtarg_st[1], lambd, int_pts)})
+            lambd, int_pts = transform.get_spline_values(fhtarg_la[0], off,
+                                                         fhtarg_la[1])
+            self.fhtarg_la.update({'fhtarg': (fhtarg_la[0],
+                                              fhtarg_la[1], lambd, int_pts)})
+            lambd, int_pts = transform.get_spline_values(fhtarg_sp[0], off,
+                                                         fhtarg_sp[1])
+            self.fhtarg_sp.update({'fhtarg': (fhtarg_sp[0],
+                                              fhtarg_sp[1], lambd, int_pts)})
+
     def time_fht_standard(self, size):
         transform.fht(**self.fhtarg_st, **self.hankel)
 
