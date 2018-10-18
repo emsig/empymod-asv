@@ -71,10 +71,10 @@ class Hankel:
 
         # Collect input
         self.hankel = {'zsrc': zsrc, 'zrec': zrec, 'lsrc': lsrc, 'lrec': lrec,
-                       'off': off, 'angle': angle, 'depth': depth, 'ab': ab,
-                       'etaH': etaH, 'etaV': etaV, 'zetaH': zetaH, 'zetaV':
-                       zetaV, 'xdirect': xdirect, 'msrc': msrc, 'mrec': mrec,
-                       'use_ne_eval': use_ne_eval}
+                       'off': off, 'depth': depth, 'ab': ab, 'etaH': etaH,
+                       'etaV': etaV, 'zetaH': zetaH, 'zetaV': zetaV, 'xdirect':
+                       xdirect, 'msrc': msrc, 'mrec': mrec, 'use_ne_eval':
+                       use_ne_eval}
 
         # Before c73d6647; you had to give `ab` to `check_hankel`;
         # check_opt didn't exist then.
@@ -139,6 +139,14 @@ class Hankel:
             self.qwearg_sp.update({'use_spline': True})
             self.qwearg_st.update({'use_spline': False})
             self.quadargs.update({'use_spline': True})
+
+        # From bb6447a onwards ht-transforms take `factAng`, not `angle`, to
+        # avoid re-calculation in loops.
+        try:
+            transform.fht(angle=angle, **self.fhtarg_la, **self.hankel)
+            self.hankel['angle'] = angle
+        except:
+            self.hankel['factAng'] = kernel.angle_factor(angle, ab, msrc, mrec)
 
     def time_fht_standard(self, size):
         transform.fht(**self.fhtarg_st, **self.hankel)
