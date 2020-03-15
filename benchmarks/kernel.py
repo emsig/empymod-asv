@@ -48,9 +48,9 @@ class Core:
 
             # Define survey
             lsrc = 1
-            zsrc = np.array([250.])
+            zsrc = 250.
             lrec = 1
-            zrec = np.array([300.])
+            zrec = 300.
             ab = 11
             msrc = False
             mrec = False
@@ -65,7 +65,6 @@ class Core:
             mpermV = np.ones(res.shape)
 
             # Other parameters
-            use_ne_eval = False
             xdirect = False
             TM = True
 
@@ -84,22 +83,22 @@ class Core:
             green_wave = {'zsrc': zsrc, 'zrec': zrec, 'lsrc': lsrc, 'lrec':
                           lrec, 'depth': depth, 'etaH': etaH, 'etaV': etaV,
                           'zetaH': zetaH, 'zetaV': zetaV, 'lambd': lambd, 'ab':
-                          ab, 'xdirect': xdirect, 'msrc': msrc, 'mrec': mrec,
-                          'use_ne_eval': use_ne_eval}
-            data[size]['green_wave'] = green_wave
+                          ab, 'xdirect': xdirect, 'msrc': msrc, 'mrec': mrec}
 
             # Collect input for kernel.reflections()
             reflections = {'depth': depth, 'e_zH': etaH, 'Gam': Gam, 'lrec':
-                           lrec, 'lsrc': lsrc, 'use_ne_eval': use_ne_eval}
-            data[size]['reflections'] = reflections
+                           lrec, 'lsrc': lsrc}
 
             # Calculate plus/minus reflection coefficients
             Rp, Rm = kernel.reflections(**reflections)
 
             # Collect input for kernel.fields()
             fields = {'depth': depth, 'Gam': Gam, 'lrec': lrec, 'lsrc': lsrc,
-                      'Rp': Rp, 'Rm': Rm, 'zsrc': zsrc, 'ab': ab, 'TM': TM,
-                      'use_ne_eval': use_ne_eval}
+                      'Rp': Rp, 'Rm': Rm, 'zsrc': zsrc, 'ab': ab, 'TM': TM}
+
+            # Add to dict.
+            data[size]['green_wave'] = green_wave
+            data[size]['reflections'] = reflections
             data[size]['fields'] = fields
 
         return data
