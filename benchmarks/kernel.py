@@ -3,8 +3,14 @@ from empymod import kernel, filters
 from scipy.constants import mu_0       # Magn. permeability of free space [H/m]
 from scipy.constants import epsilon_0  # Elec. permittivity of free space [F/m]
 
+try:
+    from empymod.transform import hankel_dlf  # noqa
+    VERSION2 = True
+except ImportError:
+    VERSION2 = False
 
-class Core:
+
+class Kernel:
     """Timing for empymod.kernel functions.
 
     Timing checks for:
@@ -48,12 +54,18 @@ class Core:
 
             # Define survey
             lsrc = 1
-            zsrc = 250.
             lrec = 1
-            zrec = 300.
             ab = 11
             msrc = False
             mrec = False
+
+            if VERSION2:
+                zsrc = 250.
+                zrec = 300.
+            else:
+                zsrc = np.array([250.])  # Not sure if this distinction
+                zrec = np.array([300.])  # is actually needed
+                use_ne_eval = False
 
             # Define model
             depth = np.array([-np.infty, 0, 300, 2000, 2100])
@@ -68,7 +80,7 @@ class Core:
             xdirect = False
             TM = True
 
-            # Calculate eta, zeta, wavenumber, Gamma
+            # Compute eta, zeta, wavenumber, Gamma
             etaH = 1/res + np.outer(2j*np.pi*freq, epermH*epsilon_0)
             etaV = 1/(res*aniso*aniso) + np.outer(2j*np.pi*freq,
                                                   epermV*epsilon_0)
@@ -89,12 +101,18 @@ class Core:
             reflections = {'depth': depth, 'e_zH': etaH, 'Gam': Gam, 'lrec':
                            lrec, 'lsrc': lsrc}
 
-            # Calculate plus/minus reflection coefficients
+            if not VERSION2:
+                green_wave['use_ne_eval'] = use_ne_eval
+                reflections['use_ne_eval'] = use_ne_eval
+
+            # Compute plus/minus reflection coefficients
             Rp, Rm = kernel.reflections(**reflections)
 
             # Collect input for kernel.fields()
             fields = {'depth': depth, 'Gam': Gam, 'lrec': lrec, 'lsrc': lsrc,
                       'Rp': Rp, 'Rm': Rm, 'zsrc': zsrc, 'ab': ab, 'TM': TM}
+            if not VERSION2:
+                fields['use_ne_eval'] = use_ne_eval
 
             # Add to dict.
             data[size]['green_wave'] = green_wave
