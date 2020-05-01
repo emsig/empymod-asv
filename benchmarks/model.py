@@ -7,8 +7,14 @@ VariableCatch = (LookupError, AttributeError, ValueError, TypeError, NameError)
 try:
     from empymod.transform import hankel_dlf  # noqa
     VERSION2 = True
+    HTARG101 = {'dlf': 'key_101_2009'}
+    HTARG201 = {'dlf': 'key_201_2009'}
+    HTARG401 = {'dlf': 'key_401_2009'}
 except ImportError:
     VERSION2 = False
+    HTARG101 = 'key_101_2009'
+    HTARG201 = 'key_201_2009'
+    HTARG401 = 'key_401_2009'
 
 
 class Bipole:
@@ -20,7 +26,6 @@ class Bipole:
     reason.
 
     """
-
     def time_frequency(self):
         model.bipole(
                 src=[[-50, 0], [0, 30],
@@ -33,7 +38,7 @@ class Bipole:
                 res=[2e14, 0.3, 1, 100, 1],
                 freqtime=[0.1, 1.0, 10.],
                 srcpts=5, recpts=5, strength=1000,
-                htarg='key_201_2009',
+                htarg=HTARG201,
                 xdirect=False, verb=0)
 
     def time_time(self):
@@ -43,7 +48,7 @@ class Bipole:
                 depth=[0, 1000, 2000, 2100],
                 res=[2e14, 0.3, 1, 100, 1],
                 freqtime=[0.1, 1.0, 10.],
-                htarg='key_201_2009',
+                htarg=HTARG201,
                 srcpts=1, recpts=1, strength=0,
                 signal=-1, xdirect=False, verb=0)
 
@@ -67,7 +72,7 @@ class Dipole:
                 'depth': [0, 1000, 2000, 2100],
                 'res': [2e14, 0.3, 1, 100, 1],
                 'xdirect': False,
-                'htarg': 'key_201_2009',
+                'htarg': HTARG201,
                 'loop': loop,
                 'verb': 0}
         if not VERSION2:
@@ -129,7 +134,7 @@ class VariousDipole:
                   [0, 1000],               # Depths
                   [2e14, 0.3, 1],          # Resistivities
                   np.logspace(-2, 2, 11),  # Frequencies
-                  ab=12, xdirect=False, htarg='key_101_2009', verb=0)
+                  ab=12, xdirect=False, htarg=HTARG101, verb=0)
 
     def time_land_angle_16(self):
         # First arguments without name, for backwards comp. with `frequency`
@@ -139,7 +144,7 @@ class VariousDipole:
                   [2e14, 10],              # Resistivities
                   np.logspace(-2, 2, 11),  # Frequencies
                   ab=16, epermH=[0, 1], epermV=[0, 1], xdirect=False,
-                  htarg='key_101_2009', verb=0)
+                  htarg=HTARG101, verb=0)
 
     def time_difflsrclrec_42(self):
         # First arguments without name, for backwards comp. with `frequency`
@@ -149,7 +154,7 @@ class VariousDipole:
                   [2e14, 10, 1],           # Resistivities
                   np.logspace(-2, 2, 11),  # Frequencies
                   aniso=[1, 2, 0.5], ab=42, xdirect=False,
-                  htarg='key_101_2009', verb=0)
+                  htarg=HTARG101, verb=0)
 
     def time_highfreq_11(self):
         # First arguments without name, for backwards comp. with `frequency`
@@ -160,7 +165,7 @@ class VariousDipole:
                   np.logspace(6, 8, 11),  # Frequencies
                   aniso=[1, 2, 0.5], ab=11, epermH=[1, 80, 5],
                   epermV=[1, 40, 10], mpermH=[1, 1, 4], mpermV=[1, 2, 0.5],
-                  xdirect=False, htarg='key_401_2009', verb=0)
+                  xdirect=False, htarg=HTARG401, verb=0)
 
 
 class Analytical:
