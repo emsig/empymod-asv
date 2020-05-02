@@ -105,27 +105,37 @@ class Hankel:
                 new_version = False
                 charg = (ab, verb)
 
-        # From 9bed72b0 onwards, there is no `use_spline`; `ftarg` input
+        # From 9bed72b0 onwards, there is no `use_spline`; `htarg` input
         # changed (29/04/2018; before v1.4.1).
         if new_version:
-            ftarg = ['key_201_2009', -1]
+            if VERSION2:
+                htarg = {'dlf': 'key_201_2009', 'pts_per_dec': -1}
+            else:
+                htarg = ['key_201_2009', -1]
         else:
-            ftarg = ['key_201_2009', None]
+            htarg = ['key_201_2009', None]
 
         # HT arguments
         if VERSION2:
             dlfargname = 'htarg'
             qweargname = 'htarg'
             quadargname = 'htarg'
+            htarg1 = {'dlf': 'key_201_2009', 'pts_per_dec': 0}
+            htarg2 = {'dlf': 'key_201_2009', 'pts_per_dec': 10}
+            name = 'dlf'
         else:
             dlfargname = 'fhtarg'
             qweargname = 'qweargs'
             quadargname = 'quadargs'
-        _, fhtarg_st = utils.check_hankel('fht', ['key_201_2009', 0], *charg)
+            htarg1 = ['key_201_2009', 0]
+            htarg2 = ['key_201_2009', 10]
+            name = 'fht'
+
+        _, fhtarg_st = utils.check_hankel(name, htarg1, *charg)
         self.fhtarg_st = {dlfargname: fhtarg_st}
-        _, fhtarg_sp = utils.check_hankel('fht', ['key_201_2009', 10], *charg)
+        _, fhtarg_sp = utils.check_hankel(name, htarg2, *charg)
         self.fhtarg_sp = {dlfargname: fhtarg_sp}
-        _, fhtarg_la = utils.check_hankel('fht', ftarg, *charg)
+        _, fhtarg_la = utils.check_hankel(name, htarg, *charg)
         self.fhtarg_la = {dlfargname: fhtarg_la}
 
         # QWE: We lower the requirements here, otherwise it takes too long
@@ -134,8 +144,16 @@ class Hankel:
 
         # Args depend if QUAD included into QWE or not
         try:
-            args_sp = [1e-6, 1e-10, 51, 100, 10, np.inf]
-            args_st = [1e-6, 1e-10, 51, 100, 0, np.inf]
+            if VERSION2:
+                args_sp = {'atol': 1e-6, 'rtol': 1e-10, 'nquad': 51,
+                           'maxint': 100, 'pts_per_dec': 10,
+                           'diff_quad': np.inf}
+                args_st = {'atol': 1e-6, 'rtol': 1e-10, 'nquad': 51,
+                           'maxint': 100, 'pts_per_dec': 0,
+                           'diff_quad': np.inf}
+            else:
+                args_sp = [1e-6, 1e-10, 51, 100, 10, np.inf]
+                args_st = [1e-6, 1e-10, 51, 100, 0, np.inf]
             _, qwearg_sp = utils.check_hankel('qwe', args_sp, *charg)
             _, qwearg_st = utils.check_hankel('qwe', args_st, *charg)
         except VariableCatch:
@@ -149,7 +167,11 @@ class Hankel:
 
         # QUAD: We lower the requirements here, otherwise it takes too long
         # ['rtol', 'atol', 'limit', 'a', 'b', 'pts_per_dec']
-        args = [1e-6, 1e-10, 100, 1e-6, 0.1, 10]
+        if VERSION2:
+            args = {'atol': 1e-6, 'rtol': 1e-10, 'limit': 100, 'a': 1e-6,
+                    'b': 0.1, 'pts_per_dec': 10}
+        else:
+            args = [1e-6, 1e-10, 100, 1e-6, 0.1, 10]
         try:  # QUAD only included since 6104614e (before v1.3.0)
             _, quadargs = utils.check_hankel('quad', args, *charg)
             self.quadargs = {quadargname: quadargs}
@@ -308,15 +330,22 @@ class Dlf:
                 else:
                     pts_per_dec = 10
 
-                # HT arguments
-                _, fhtarg = utils.check_hankel(
-                        'fht', ['key_201_2009', pts_per_dec], 0)
-
                 # Compute kernels for dlf
                 if VERSION2:
+                    # HT arguments
+                    _, fhtarg = utils.check_hankel(
+                            'dlf',
+                            {'dlf': 'key_201_2009',
+                             'pts_per_dec': pts_per_dec},
+                            0)
+
                     inp = (fhtarg['dlf'], off, fhtarg['pts_per_dec'])
                     lambd, _ = transform.get_dlf_points(*inp)
                 else:
+                    # HT arguments
+                    _, fhtarg = utils.check_hankel(
+                            'fht', ['key_201_2009', pts_per_dec], 0)
+
                     inp = (fhtarg[0], off, fhtarg[1])
                     lambd, _ = transform.get_spline_values(*inp)
 
@@ -425,7 +454,8 @@ class Fourier:
 
             # Get Hankel arguments
             if VERSION2:
-                ht, htarg = utils.check_hankel('dlf', ['', -1], verb)
+                ht, htarg = utils.check_hankel(
+                        'dlf', {'pts_per_dec': -1}, verb)
             else:
                 # `pts_per_dec` changed at 9bed72b0 (29/04/2018; bef. v1.4.1)
                 try:
@@ -474,7 +504,6 @@ class Fourier:
             fft_and_ffht = True
             if VERSION2:
                 name_dlf = 'fourier_dlf'
-                name_ffht = 'ffht'
                 name_fqwe = 'fourier_qwe'
                 name_fftlog = 'fourier_fftlog'
                 name_fft = 'fourier_fft'
@@ -509,28 +538,51 @@ class Fourier:
                     old_case = True
 
             # Get fourier_dlf arguments
-            if old_case:
+            if old_case and not VERSION2:
                 tdat['dlf_st'] = ()  # Standard was not possible in old case
                 tdat['dlf_la'] = get_args(freqtime, name_ffht, None)
+            elif VERSION2:
+                tdat['dlf_st'] = get_args(
+                        freqtime, 'dlf',
+                        {'dlf': 'key_201_CosSin_2012', 'pts_per_dec': 0})
+                tdat['dlf_la'] = get_args(
+                        freqtime, 'dlf',
+                        {'dlf': 'key_201_CosSin_2012', 'pts_per_dec': -1})
             else:
                 tdat['dlf_st'] = get_args(
                         freqtime, name_ffht, ['key_201_CosSin_2012', 0])
                 tdat['dlf_la'] = get_args(
                         freqtime, name_ffht, ['key_201_CosSin_2012', -1])
-            tdat['dlf_sp'] = get_args(
-                    freqtime, name_ffht, ['key_201_CosSin_2012', 10])
 
-            # Get fourier_qwe arguments
-            tdat['qwe'] = get_args(freqtime, 'fqwe', ['', '', '', '', 10])
+            if VERSION2:
+                tdat['dlf_sp'] = get_args(
+                        freqtime, 'dlf',
+                        {'dlf': 'key_201_CosSin_2012', 'pts_per_dec': 10})
 
-            # Get fourier_fftlog arguments
-            tdat['fftlog'] = get_args(freqtime, 'fftlog', None)
+                # Get fourier_qwe arguments
+                tdat['qwe'] = get_args(freqtime, 'qwe', {'pts_per_dec': 10})
 
-            # Get fourier_fft arguments
-            if fft_and_ffht:
-                tdat['fft'] = get_args(freqtime, 'fft', None)
+                # Get fourier_fftlog arguments
+                tdat['fftlog'] = get_args(freqtime, 'fftlog', {})
+
+                # Get fourier_fft arguments
+                tdat['fft'] = get_args(freqtime, 'fft', {})
+
             else:
-                tdat['fft'] = ()  # Will fail
+                tdat['dlf_sp'] = get_args(
+                        freqtime, name_ffht, ['key_201_CosSin_2012', 10])
+
+                # Get fourier_qwe arguments
+                tdat['qwe'] = get_args(freqtime, 'fqwe', ['', '', '', '', 10])
+
+                # Get fourier_fftlog arguments
+                tdat['fftlog'] = get_args(freqtime, 'fftlog', None)
+
+                # Get fourier_fft arguments
+                if fft_and_ffht:
+                    tdat['fft'] = get_args(freqtime, 'fft', None)
+                else:
+                    tdat['fft'] = ()  # Will fail
 
             data[size] = tdat
 
