@@ -52,11 +52,9 @@
     // pip (with all the conda available packages installed first,
     // followed by the pip installed packages).
     //
-    // "matrix": {
-    //     "numexpr": ["1.6", "1.7"],
-    //     "six": ["", null],        // test with and without six installed
-    //     "pip+emcee": [""],   // emcee is only available for install with pip.
-    // },
+    "matrix": {
+        "numpy": ["1.17", ],
+    },
 
     // Combinations of libraries/python versions can be excluded/included
     // from the set to test. Each entry is a dictionary containing additional
