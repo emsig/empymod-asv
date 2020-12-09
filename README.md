@@ -39,5 +39,5 @@ export OMP_NUM_THREADS=1
 ```
 
 The results which are shown on
-[empymod.github.io/empymod-asv](http://empymod.github.io/empymod-asv/) are stored in the
-[github.com/empymod/empymod-bench](http://github.com/empymod/empymod-bench)-repo.
+[emsig.github.io/empymod-asv](http://emsig.github.io/empymod-asv/) are stored in the
+[github.com/emsig/empymod-bench](http://github.com/emsig/empymod-bench)-repo.
