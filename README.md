@@ -1,6 +1,6 @@
 # Benchmarks for empymod using airspeed velocity
 
-[![asv](http://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](http://empymod.github.io/empymod-asv/)
+[![asv](http://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](http://emsig.github.io/empymod-asv/)
 
 Currently there are benchmarks for:
 
