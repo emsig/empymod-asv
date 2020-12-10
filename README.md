@@ -1,6 +1,6 @@
 # Benchmarks for empymod using airspeed velocity
 
-[![asv](http://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](http://emsig.github.io/empymod-asv/)
+[![asv](http://img.shields.io/badge/benchmark-asv-blue.svg?style=flat)](http://emsig.github.io/empymod-asv/)
 
 Currently there are benchmarks for:
 
@@ -39,5 +39,5 @@ export OMP_NUM_THREADS=1
 ```
 
 The results which are shown on
-[emsig.github.io/empymod-asv](http://emsig.github.io/empymod-asv/) are stored in the
+[emsig.github.io/empymod-asv/](http://emsig.github.io/empymod-asv/) are stored in the
 [github.com/emsig/empymod-bench](http://github.com/emsig/empymod-bench)-repo.
